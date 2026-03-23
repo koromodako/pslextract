@@ -1,0 +1,60 @@
+[project]
+name = "pslextract"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["psl", "extract", "cli", "api"]
+description = "Name parser based on Public Suffix List"
+requires-python = ">=3.12"
+dynamic = ["version"]
+authors = [
+  { name="koromodako", email="koromodako@gmail.com" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "rich~=14.3",
+]
+
+
+[project.urls]
+"Homepage" = "https://github.com/koromodako/pslextract"
+"Repository" = "https://github.com/koromodako/pslextract"
+"Bug Tracker" = "https://github.com/koromodako/pslextract/issues"
+
+
+[project.scripts]
+pslfetch = "pslextract.fetch:app"
+pslparse = "pslextract.parse:app"
+pslextract = "pslextract.extract:app"
+
+
+[build-system]
+requires = ["setuptools>=82", "setuptools_scm>=9", "wheel"]
+build-backend = "setuptools.build_meta"
+
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pslextract", "pslextract.*"]
+
+
+[tool.setuptools_scm]
+version_file = "pslextract/__version__.py"
+
+
+[tool.black]
+line-length = 79
+skip-string-normalization = true
+
+
+[tool.isort]
+profile = "black"
+line_length = 79
