@@ -39,6 +39,15 @@ class PSLIndex:
     excluded: set[str] = field(default_factory=set)
 
     @classmethod
+    def from_dict(cls, dct: dict):
+        """Load from dict"""
+        return cls(
+            suffixes=set(dct['suffixes']),
+            wildcard=set(dct['wildcard']),
+            excluded=set(dct['excluded']),
+        )
+
+    @classmethod
     def from_json(cls, json_text: str):
         """Load from JSON text"""
         try:
@@ -46,11 +55,7 @@ class PSLIndex:
         except JSONDecodeError:
             _LOGGER.exception("invalid json")
             return None
-        return cls(
-            suffixes=set(dct['suffixes']),
-            wildcard=set(dct['wildcard']),
-            excluded=set(dct['excluded']),
-        )
+        return cls.from_dict(dct)
 
     @classmethod
     def from_json_file(cls, json_file: Path = DEFAULT_JSON_FILE):
@@ -67,15 +72,17 @@ class PSLIndex:
             _LOGGER.exception("cannot read %s", json_file)
         return None
 
+    def to_dict(self) -> dict:
+        """Dump to dict"""
+        return {
+            'suffixes': list(self.suffixes),
+            'wildcard': list(self.wildcard),
+            'excluded': list(self.excluded),
+        }
+
     def to_json(self) -> str:
         """Dump to JSON text"""
-        return json_dumps(
-            {
-                'suffixes': list(self.suffixes),
-                'wildcard': list(self.wildcard),
-                'excluded': list(self.excluded),
-            }
-        )
+        return json_dumps(self.to_dict())
 
     def to_json_file(self, json_file: Path = DEFAULT_JSON_FILE):
         """Dump to JSON file"""
