@@ -20,8 +20,6 @@ pip install pslextract
 pslfetch
 # Parse latest Public Suffix List (after pslfetch), use -h for help
 pslparse
-# Explore Public Suffix List index using jq from top level to sub levels
-jq '.uk.gov' ${HOME}/.cache/pslextract/psl.json
 # Process FQDNs
 names=(
     raw.githubusercontent.com
@@ -34,20 +32,20 @@ pslextract ${names[@]} | jq
 {
   "name": "raw.githubusercontent.com",
   "prefix": "",
-  "domain": "raw.githubusercontent.com",
-  "suffix": "githubusercontent.com"
+  "public_suffix": "githubusercontent.com",
+  "private_suffix": "raw.githubusercontent.com"
 }
 {
   "name": "koromodako.github.io",
   "prefix": "",
-  "domain": "koromodako.github.io",
-  "suffix": "github.io"
+  "public_suffix": "github.io",
+  "private_suffix": "koromodako.github.io"
 }
 {
   "name": "github.com",
   "prefix": "",
-  "domain": "github.com",
-  "suffix": "com"
+  "public_suffix": "com",
+  "private_suffix": "github.com"
 }
 ```
 
@@ -60,11 +58,11 @@ from json import dumps
 from pslextract import (
     DEFAULT_JSON_FILE,
     DEFAULT_RAW_FILE,
+    PSLIndex,
+    json_dumps,
     psl_create_index,
     psl_extract,
     psl_fetch,
-    psl_index_from_json_file,
-    psl_index_to_json_file,
 )
 
 NAMES = (
@@ -86,13 +84,15 @@ def main():
         if not DEFAULT_RAW_FILE.is_file():
             psl_fetch()
         index = psl_create_index()
-        psl_index_to_json_file(index)
-    index = psl_index_from_json_file()
+        index.to_json_file()
+    index = PSLIndex.from_json_file()
     for name in NAMES:
         name = psl_extract(index, name)
         if not name:
             continue
-        print(dumps(asdict(name)))
+        dct = {'name': name.value}
+        dct.update(asdict(name))
+        print(json_dumps(dct))
 
 
 if __name__ == '__main__':

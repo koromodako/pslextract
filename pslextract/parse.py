@@ -9,7 +9,7 @@ from sys import exit as sys_exit
 from .__version__ import version
 from .fetch import DEFAULT_RAW_FILE
 from .logging import get_logger
-from .serialize import DEFAULT_JSON_FILE, PSLIndexNode, psl_index_to_json_file
+from .index import DEFAULT_JSON_FILE, PSLIndex
 
 _LOGGER = get_logger('parse')
 
@@ -18,23 +18,19 @@ def psl_lines_from_raw(raw_file: Path) -> Iterator[str]:
     """Yield preprocessed lines from PSL raw file"""
     with raw_file.open('r', encoding='utf-8') as fobj:
         for line in fobj:
-            line = line.strip('.* \n')
+            if '//' in line:
+                line, _ = line.split('//', 1)
+            line = line.strip()
             if not line:
-                continue
-            if line.startswith('//'):
                 continue
             yield line
 
 
-def psl_create_index(raw_file: Path = DEFAULT_RAW_FILE) -> PSLIndexNode:
+def psl_create_index(raw_file: Path = DEFAULT_RAW_FILE) -> PSLIndex:
     """Create index from PSL raw file"""
-    index = {}
+    index = PSLIndex()
     for line in psl_lines_from_raw(raw_file):
-        pointer = index
-        components = line.split('.')
-        while components:
-            last = components.pop()
-            pointer = pointer.setdefault(last, {})
+        index.add(line)
     return index
 
 
@@ -69,6 +65,6 @@ def app():
     _LOGGER.info("build index...")
     index = psl_create_index(args.raw_file)
     _LOGGER.info("writing index to %s ...", args.json_file)
-    psl_index_to_json_file(index, args.json_file)
+    index.to_json_file(args.json_file)
     _LOGGER.info("operation took %s", datetime.now() - start)
     sys_exit(0)

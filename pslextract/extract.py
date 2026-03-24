@@ -6,14 +6,16 @@ from dataclasses import asdict, dataclass
 from datetime import datetime
 from functools import cached_property
 from pathlib import Path
+from re import compile as regexp
 from sys import exit as sys_exit
 
 from .__version__ import version
 from .logging import get_logger
 from .parse import DEFAULT_JSON_FILE
-from .serialize import PSLIndexNode, json_dumps, psl_index_from_json_file
+from .index import PSLIndex, json_dumps
 
 _LOGGER = get_logger('extract')
+_PATTERN = regexp(r'([\w\-]+\.)+(?P<tld>[\w\-]+)')
 
 
 @dataclass(kw_only=True)
@@ -30,47 +32,29 @@ class Name:
         return '.'.join(filter(None, [self.prefix, self.domain]))
 
 
-def psl_validate_name(index: PSLIndexNode, name: str) -> bool:
+def psl_validate_name(index: PSLIndex, name: str) -> bool:
     """Determine if given name is valid"""
     if not name:
         _LOGGER.warning("invalid name (empty string)")
         return False
-    if '.' not in name:
-        _LOGGER.warning("invalid name (missing dot): '%s'", name)
+    match = _PATTERN.fullmatch(name)
+    if not match:
+        _LOGGER.warning("invalid name (unexpected pattern): '%s'", name)
         return False
-    if '..' in name:
-        _LOGGER.warning("invalid name (contiguous dots): '%s'", name)
-        return False
-    _, tld = name.rsplit('.', 1)
-    if tld not in index:
+    tld = match.group('tld')
+    if tld not in index.suffixes:
         _LOGGER.warning("invalid name (unknown tld): '%s'", name)
         return False
     return True
 
 
 def psl_extract(
-    index: PSLIndexNode, name: str, validate: bool = True
+    index: PSLIndex, name: str, validate: bool = True
 ) -> Name | None:
     """Perform extraction for given name"""
     if validate and not psl_validate_name(index, name):
         return None
-    suffix = []
-    domain = []
-    pointer = index
-    components = name.split('.')
-    while components:
-        current = components.pop()
-        pointer = pointer.get(current)
-        if isinstance(pointer, dict):
-            suffix.append(current)
-            continue
-        domain = [current] + suffix[::-1]
-        break
-    return Name(
-        prefix='.'.join(components),
-        domain='.'.join(domain),
-        suffix='.'.join(suffix[::-1]),
-    )
+    return index.parse(name)
 
 
 def _parse_name_list(name_list: list[str]) -> Iterator[str]:
@@ -108,7 +92,7 @@ def app():
         sys_exit(1)
     start = datetime.now()
     _LOGGER.info("reading index from %s ...", args.json_file)
-    index = psl_index_from_json_file(args.json_file)
+    index = PSLIndex.from_json_file(args.json_file)
     _LOGGER.info("extractings ...")
     for name in _parse_name_list(args.name_list):
         name = psl_extract(index, name)
