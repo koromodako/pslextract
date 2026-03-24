@@ -1,6 +1,8 @@
 # PSLExtract
 
-Name parser based on [Public Suffix List](https://publicsuffix.org/) (a.k.a. PSL).
+Name parser based on [Public Suffix List](https://publicsuffix.org/) (a.k.a. PSL). 
+
+This package is an alternative to [publicsuffixlist](https://pypi.org/project/publicsuffixlist/).
 
 ## Setup
 
